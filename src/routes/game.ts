@@ -1,0 +1,51 @@
+// src/routes/game.ts
+import { Router } from "express";
+import { 
+  createGame, 
+  getGames, 
+  updateGame, 
+  toggleGameStatus 
+} from "../controllers/game.controller";
+import { authenticate } from "../middleware/auth";
+import { requireRole } from "../middleware/role";
+import { Role } from "../models/User";
+import { upload } from "../middleware/upload"; // ඔයාගේ multer ෆයිල් එක
+
+const router = Router();
+
+// GET - Public හෝ Auth (හැමෝටම ගේම්ස් බලන්න පුළුවන්)
+router.get("/", getGames);
+
+// POST - අලුත් ගේම් එකක් දැමීම (Admin ට පමණි)
+router.post(
+  "/", 
+  authenticate, 
+  requireRole([Role.ADMIN]), 
+  upload.fields([
+    { name: 'thumbnail', maxCount: 1 }, 
+    { name: 'gameFile', maxCount: 1 }
+  ]), 
+  createGame
+);
+
+// PUT - Game එකක් Edit කිරීම (Admin ට පමණි)
+router.put(
+  "/:id", 
+  authenticate, 
+  requireRole([Role.ADMIN]), 
+  upload.fields([
+    { name: 'thumbnail', maxCount: 1 }, 
+    { name: 'gameFile', maxCount: 1 }
+  ]), 
+  updateGame
+);
+
+// PATCH - Active/Inactive කිරීම (Admin ට පමණි)
+router.patch(
+  "/:id/status", 
+  authenticate, 
+  requireRole([Role.ADMIN]), 
+  toggleGameStatus
+);
+
+export default router;
