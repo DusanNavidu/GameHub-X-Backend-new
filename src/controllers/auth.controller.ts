@@ -6,6 +6,7 @@ import { AUthRequest } from "../middleware/auth";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { sendEmailOTP } from "../utils/mailer";
+import { uploadToCloudinary } from "../utils/cloudinaryHelper";
 
 dotenv.config();
 
@@ -165,6 +166,35 @@ export const getRole = async (req: AUthRequest, res: Response) => {
     });
   } catch (err) {
     console.error("getRole Error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const updateProfilePic = async (req: AUthRequest, res: Response) => {
+  try {
+    if (!req.user || !req.user.sub) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ message: "No image file provided" });
+    }
+
+    const profilePicUrl = await uploadToCloudinary(file.buffer, "gamehub/profiles", "image");
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.sub,
+      { $set: { profilePic: profilePicUrl } },
+      { new: true }
+    ).select("-password -otp -otpExpiryTime");
+
+    res.status(200).json({
+      message: "Profile picture updated successfully",
+      data: updatedUser,
+    });
+  } catch (err) {
+    console.error("updateProfilePic Error:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 };
