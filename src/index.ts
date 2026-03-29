@@ -1,5 +1,4 @@
 import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import authRouter from "./routes/auth";
@@ -12,14 +11,20 @@ dotenv.config();
 const app = express();
 const MONGO_URI = process.env.MONGO_URI as string;
 
-app.use(
-  cors({
-    origin: ["https://game-hub-x-frontend.vercel.app", "http://localhost:5173", "http://localhost:5174"],
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    credentials: true,
-    optionsSuccessStatus: 204
-  })
-);
+// 🟢 1. The Bulletproof CORS Fix (Manual Headers)
+app.use((req, res, next) => {
+  // ඔයාගේ Frontend ලින්ක් එකට කෙලින්ම අවසර දෙනවා
+  res.setHeader("Access-Control-Allow-Origin", "https://game-hub-x-frontend.vercel.app");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+
+  // Vercel එකේදී Preflight (OPTIONS) request එක ආවම කෙලින්ම OK (200) යවනවා
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  next();
+});
 
 app.use(express.json());
 
@@ -45,15 +50,12 @@ app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/games", gameRouter);
 
 app.get("/", (req, res) => {
-  res.send("Backend is running...");
+  res.send("Backend is running securely...");
 });
 
-// Vercel එකේදී app.listen අවශ්‍ය නැත. 
-// local test කිරීමට පමණක් මෙය පාවිච්චි කරන්න:
 if (process.env.NODE_ENV !== "production") {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
 
-// මෙය අනිවාර්යයි!
 export default app;
