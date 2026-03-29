@@ -14,16 +14,14 @@ const MONGO_URI = process.env.MONGO_URI as string;
 
 app.use(
   cors({
-    origin: "*", // Testing කාලයේදී හැමෝටම ඉඩ දෙන්න
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
-    preflightContinue: false,
+    origin: ["https://game-hub-x-frontend.vercel.app", "http://localhost:5173", "http://localhost:5174"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    credentials: true,
     optionsSuccessStatus: 204
   })
 );
 
 app.use(express.json());
-
-app.options("*", cors());
 
 if (!MONGO_URI) {
   console.error("❌ MONGO_URI is not defined");
