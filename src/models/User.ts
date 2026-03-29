@@ -10,6 +10,7 @@ export interface IUSER extends Document {
   status: Status;
   otp?: string | null;
   otpExpiryTime?: Date | null;
+  profilePic?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +22,7 @@ const UserSchema: Schema = new Schema({
   status: { type: String, enum: Object.values(Status), default: Status.ACTIVE },
   otp: { type: String, default: null },
   otpExpiryTime: { type: Date, default: null },
+  profilePic: { type: String, default: "" },
 }, { timestamps: true });
 
 export const User = mongoose.model<IUSER>('User', UserSchema);
