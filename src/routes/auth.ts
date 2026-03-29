@@ -9,7 +9,7 @@ import {
   updateProfilePic
 } from "../controllers/auth.controller";
 import { authenticate } from "../middleware/auth";
-import { upload } from "../middleware/upload";
+// import { upload } from "../middleware/upload";
 
 const router = Router();
 
@@ -25,6 +25,6 @@ router.get("/me", authenticate, getMyProfile);
 
 router.get("/role", authenticate, getRole);
 
-router.put("/profile-pic", authenticate, upload.single("profilePic"), updateProfilePic);
+// router.put("/profile-pic", authenticate, upload.single("profilePic"), updateProfilePic);
 
 export default router;
