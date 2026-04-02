@@ -4,7 +4,8 @@ import {
   createGame, 
   getGames, 
   updateGame, 
-  toggleGameStatus 
+  toggleGameStatus, 
+  getPublicGames
 } from "../controllers/game.controller";
 import { authenticate } from "../middleware/auth";
 import { requireRole } from "../middleware/role";
@@ -13,8 +14,9 @@ import { upload } from "../middleware/upload"; // ඔයාගේ multer ෆය�
 
 const router = Router();
 
-// GET - Public හෝ Auth (හැමෝටම ගේම්ස් බලන්න පුළුවන්)
-router.get("/", getGames);
+router.get("/admin/getall", authenticate, requireRole([Role.ADMIN]), getGames);
+
+router.get("/public/getall", getPublicGames); // මේක හැමෝටම බලන්න පුළුවන් (Public)
 
 // POST - අලුත් ගේම් එකක් දැමීම (Admin ට පමණි)
 router.post(

@@ -5,6 +5,9 @@ import mongoose from "mongoose";
 import authRouter from "./routes/auth";
 import categoryRouter from "./routes/category";
 import gameRouter from "./routes/game";
+import tagRouter from "./routes/tag";
+import interactionRouter from "./routes/interaction";
+import gameTypeRoutes from "./routes/gameType";
 import { createDefaultAdmin } from "./utils/createDefaultAdmin";
 
 dotenv.config();
@@ -12,9 +15,10 @@ dotenv.config();
 const app = express();
 const MONGO_URI = process.env.MONGO_URI as string;
 
+// https://game-hub-x-frontend.vercel.app
 app.use(
   cors({
-    origin: ["https://game-hub-x-frontend.vercel.app", "http://localhost:5173", "http://localhost:5174"],
+    origin: ["http://localhost:5173", "http://localhost:5174"],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"]
@@ -42,6 +46,9 @@ if (!MONGO_URI) {
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/games", gameRouter);
+app.use("/api/v1/tags", tagRouter);
+app.use("/api/v1/interact", interactionRouter);
+app.use("/api/v1/game-types", gameTypeRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running...");

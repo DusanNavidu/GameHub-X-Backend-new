@@ -25,4 +25,16 @@ const UserSchema: Schema = new Schema({
   profilePic: { type: String, default: "" },
 }, { timestamps: true });
 
+UserSchema.virtual('favorites', {
+    ref: 'Favorite',
+    localField: '_id',
+    foreignField: 'userId'
+});
+
+UserSchema.virtual('reviews', {
+    ref: 'Review',
+    localField: '_id',
+    foreignField: 'userId'
+});
+
 export const User = mongoose.model<IUSER>('User', UserSchema);

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import Category, { CategoryStatus } from "../models/Category"; // ඔයාගේ Category model එක තියෙන තැනට path එක හදන්න
+import Category, { CategoryStatus } from "../models/Category"; 
 
 // 1. CREATE - අලුත් Category එකක් සෑදීම
 export const createCategory = async (req: Request, res: Response) => {
@@ -10,7 +10,6 @@ export const createCategory = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Category name is required" });
     }
 
-    // නම දැනටමත් තියෙනවද කියලා බලනවා (Case-insensitive)
     const existingCategory = await Category.findOne({ 
       name: { $regex: new RegExp(`^${name}$`, 'i') } 
     });
@@ -31,30 +30,50 @@ export const createCategory = async (req: Request, res: Response) => {
   }
 };
 
-// 2. GET ALL & SEARCH - සියලුම Categories ගැනීම සහ Search කිරීම
+// 2. GET ALL & SEARCH - සියලුම Categories ගැනීම (Pagination සහ Search සමග)
 export const getCategories = async (req: Request, res: Response) => {
   try {
-    // Frontend එකෙන් ?search=action හෝ ?status=ACTIVE වගේ එව්වොත් ගන්නවා
-    const { search, status } = req.query;
+    const { search, status, page, limit } = req.query;
     
     let query: any = {};
 
-    // Search keyword එකක් තියෙනවා නම් නමෙන් හොයනවා
+    // Search
     if (search) {
-      query.name = { $regex: search, $options: "i" }; // "i" නිසා Simple/Capital ප්‍රශ්නයක් නෑ
+      query.name = { $regex: search, $options: "i" }; 
     }
 
-    // Status එකක් විශේෂයෙන් ඉල්ලලා නම් ඒක දානවා
+    // Status filter
     if (status) {
       query.status = status;
     }
 
-    // අලුත්ම ඒවා උඩින් එන්න sort කරනවා (createdAt: -1)
-    const categories = await Category.find(query).sort({ createdAt: -1 });
+    // 🟢 Pagination Logic
+    // Page එකක් දීලා නැත්නම් 1 වෙනි පිටුව ගන්නවා. Limit එකක් දීලා නැත්නම් එක පිටුවකට 10 ක් ගන්නවා.
+    const pageNumber = parseInt(page as string) || 1;
+    const limitNumber = parseInt(limit as string) || 10;
+    
+    // මඟහැරිය යුතු documents ගණන (Skip)
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // මුළු Documents ගණන ලබාගැනීම (Frontend එකේ පිටු ගාණ හදන්න මේක ඕනේ)
+    const total = await Category.countDocuments(query);
+
+    // දත්ත ලබාගැනීම
+    const categories = await Category.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNumber);
 
     res.status(200).json({
       message: "Categories fetched successfully",
       data: categories,
+      // 🟢 Frontend එකට යවන Pagination විස්තර
+      pagination: {
+        total,
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages: Math.ceil(total / limitNumber),
+      }
     });
   } catch (err) {
     console.error("getCategories Error:", err);
@@ -62,17 +81,16 @@ export const getCategories = async (req: Request, res: Response) => {
   }
 };
 
-// 3. UPDATE - Category එකක් වෙනස් කිරීම (නම සහ විස්තරය)
+// 3. UPDATE - Category එකක් වෙනස් කිරීම
 export const updateCategory = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name, description } = req.body;
 
-    // වෙනස් කරන නම වෙන Category එකකට දැනටමත් තියෙනවද බලනවා
     if (name) {
       const existingCategory = await Category.findOne({ 
         name: { $regex: new RegExp(`^${name}$`, 'i') },
-        _id: { $ne: id } // තමන්ගේම ID එක ඇරෙන්න වෙන අයට මේ නම තියෙනවද බලනවා
+        _id: { $ne: id } 
       });
 
       if (existingCategory) {
@@ -80,11 +98,10 @@ export const updateCategory = async (req: Request, res: Response) => {
       }
     }
 
-    // Update කරනවා
     const updatedCategory = await Category.findByIdAndUpdate(
       id,
       { $set: { name, description } },
-      { new: true } // Update වුණු අලුත් data එක return කරන්න
+      { new: true } 
     );
 
     if (!updatedCategory) {
@@ -112,12 +129,10 @@ export const toggleCategoryStatus = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    // දැනට ACTIVE නම් INACTIVE කරනවා, INACTIVE නම් ACTIVE කරනවා
     const newStatus = category.status === CategoryStatus.ACTIVE 
       ? CategoryStatus.INACTIVE 
       : CategoryStatus.ACTIVE;
 
-    // Save කරනවා
     await Category.updateOne(
       { _id: id },
       { $set: { status: newStatus } }
@@ -129,6 +144,20 @@ export const toggleCategoryStatus = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error("toggleCategoryStatus Error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// 5. GET PUBLIC CATEGORIES (Pagination නොමැතිව, Active ඒවා පමණි)
+export const getPublicCategories = async (req: Request, res: Response) => {
+  try {
+    const categories = await Category.find({ status: CategoryStatus.ACTIVE }).sort({ createdAt: -1 });
+    res.status(200).json({
+      message: "Public categories fetched successfully",
+      data: categories,
+    });
+  } catch (err) {
+    console.error("getPublicCategories Error:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 };

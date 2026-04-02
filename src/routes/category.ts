@@ -3,7 +3,8 @@ import {
   createCategory, 
   getCategories, 
   updateCategory, 
-  toggleCategoryStatus 
+  toggleCategoryStatus, 
+  getPublicCategories
 } from "../controllers/category.controller";
 import { authenticate } from "../middleware/auth";
 import { requireRole } from "../middleware/role"; // ඔයා කලින් හදපු role check කරන middleware එක
@@ -11,11 +12,10 @@ import { Role } from "../models/User";
 
 const router = Router();
 
-// 🟢 GET - සාමාන්‍යයෙන් Categories බලන්න හැමෝටම පුළුවන් නිසා මේක Public තියමු 
-// (නැත්නම් Admin ට විතරක් ඕනේ නම් authenticate, requireRole([Role.ADMIN]) දාන්න)
-router.get("/", getCategories);
+router.get("/public/getall", getPublicCategories);
 
-// 🟢 අනිත් සියලුම දේවල් කළ හැක්කේ ADMIN ට පමණි
+// Admin Get All (Pagination සමග)
+router.get("/", authenticate, requireRole([Role.ADMIN]), getCategories);
 router.post(
   "/", 
   authenticate, 
